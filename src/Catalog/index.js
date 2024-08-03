@@ -33,6 +33,7 @@ const Catalog = () => {
   const focus = useIsFocused();
   const [serachText, setSearchText] = useState('');
   const [products, setProducts] = useState([]);
+  const [oldData,setOldData]= useState([])
   const [loading, setLoading] = useState(false);
   const [searchloading, setSearchLoading] = useState(false);
   const [customDropdown, setCustomdropdown] = useState(false);
@@ -52,12 +53,12 @@ const Catalog = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [filterType, setFilterType] = useState('');
   const [filtermetal, setFiltermetel] = useState('');
-  const [catalogList, setCatalogList] = useState([]);
-  const [selectedFilterCollections, setSelectedFilterCollections] = useState([]);
-  const [collectionCatalogList, setCollectionCatalogList] = useState([]);
+  const [filterItemsList, setFilterItemsList] = useState([]);
+  const [FilterCollections, setFilterCollections] = useState([]);
   const [metalcatalogList, setMetalCatalogList] = useState([]);
   const [selectedFilterTypes, setSelectedFilterTypes] = useState([]);
   const [selectedFilterMetals, setSelectedFilterMetals] = useState([]);
+  const[selectedFilterCollections,setSelectedFilterCollections]=useState([])
   const [refreshing, setRefreshing] = useState(false);
   const [serverAddress, setServerAdress] = useState('');
   const [refresh, setRefreh] = useState(false);
@@ -93,6 +94,7 @@ const Catalog = () => {
         console.log(response.data?.cataloglist, "fetch products");
         setLoading(false);
         setProducts(response.data?.cataloglist);
+        setOldData(response.data?.cataloglist)
       })
       .catch(error => {
         setLoading(false);
@@ -100,46 +102,25 @@ const Catalog = () => {
       });
   };
 
-
   useEffect(() => {
     if (serverAddress) {
       fetchProductsData()
     }
   }, [focus, serverAddress])
 
-  // const fetchSearchProductsData = async () => {
-  //   setSearchLoading(true);
-  //   axios
-  //     .get(`https://${serverAddress}/Home/CatalogList`)
-  //     .then(response => {
-  //       console.log(response.data?.cataloglist);
 
-  //       const filterdata = response.data?.cataloglist?.filter(i => {
-  //         const matchesItemNames =
-  //           selectedFilterTypes.length > 0
-  //             ? selectedFilterTypes.includes(i.itemName)
-  //             : true;
-  //         const matchesMetalCodes =
-  //           selectedFilterMetals.length > 0
-  //             ? selectedFilterMetals.includes(i.metalCode)
-  //             : true;
-  //         const matchesSearchText =
-  //           serachText.length > 0
-  //             ? i.skuName.toLowerCase().includes(serachText.toLowerCase())
-  //             : true;
-  //         return matchesItemNames && matchesMetalCodes && matchesSearchText;
-  //       });
-  //       setProducts(filterdata);
-  //       const uniqueItems = getUniqueItemsByName(response.data?.cataloglist);
-  //       setCatalogList(uniqueItems);
-  //       const uniquemetal = getUniqueItemsByMetal(response.data?.cataloglist);
-  //       setMetalCatalogList(uniquemetal);
-  //     })
-  //     .catch(error => {
-  //       console.error('Error searchhh fetching data: ', error);
-  //     });
-  // };
-
+const onSearch=async(text)=>{
+if(text==''){
+setProducts(oldData)
+}else{
+  let TempSearchList=products?.filter((item)=>{
+    return(
+      item.skuName.toLowerCase().indexOf(text.toLowerCase())>-1
+    )
+  }) 
+  setProducts(TempSearchList)
+}
+}
   // const fetchFilteredCatalogProductsData = async () => {
   //   setLoading(true);
   //   axios
@@ -379,13 +360,9 @@ const Catalog = () => {
   //   });
   // };
 
-  // useEffect(() => {
-  //   fetchProductsData();
-  // }, [focus, filterType, filtermetal]);
 
-  // useEffect(() => {
-  //   fetchSearchProductsData();
-  // }, [serachText]);
+
+  
 
   // console.log(Allselecteditem, 'allselectitemm');
 
@@ -426,6 +403,33 @@ const Catalog = () => {
   //     setIsPdfDisabled(false);
   //   }
   // };
+
+  console.log(products,"producttt")
+
+  const filterItemsName=()=>{
+    const uniqueItems = products.filter((obj, index) => {
+      return index === products.findIndex(o => obj.itemName === o.itemName);
+  });
+  setFilterItemsList(uniqueItems)
+  }
+
+  const filterMetalName=()=>{
+    const uniqueItems = products.filter((obj, index) => {
+      return index === products.findIndex(o => obj.metalCode === o.metalCode);
+  });
+  setMetalCatalogList(uniqueItems)
+  
+  }
+
+  
+  const filterCollectionName=()=>{
+    const uniqueItems = products.filter((obj, index) => {
+      return index === products.findIndex(o => obj.styleName === o.styleName);
+  });
+
+  setFilterCollections(uniqueItems)
+  }
+
 
   return (
     <>
@@ -564,6 +568,7 @@ const Catalog = () => {
                 value={serachText}
                 onChangeText={text => {
                   setSearchText(text);
+                  onSearch(text)
                 }}
               />
             </View>
@@ -625,7 +630,7 @@ const Catalog = () => {
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
                   onPress={() => {
-                    // refRBSheet.current.close();
+                    filterItemsName()
                     setShowItem(!showitem);
                   }}
                   style={[{ width: '100%', marginVertical: verticalScale(15) }]}>
@@ -642,7 +647,7 @@ const Catalog = () => {
                     marginHorizontal: 5,
                   }}>
                   {showitem
-                    ? catalogList?.map(item => {
+                    ? filterItemsList?.map(item => {
                       return (
                         <TouchableOpacity
                           key={item?.id}
@@ -673,8 +678,9 @@ const Catalog = () => {
 
                 <TouchableOpacity
                   onPress={() => {
-                    // refRBSheet.current.close();
+                  filterMetalName()
                     setMetal(!showmetal);
+
                     // setAllSelecteditem(true);
                   }}
                   style={[{ width: '100%', marginVertical: verticalScale(15) }]}>
@@ -721,6 +727,7 @@ const Catalog = () => {
 
               <TouchableOpacity
                 onPress={() => {
+                  filterCollectionName()
                   setShowCollection(!showcollection);
                 }}
                 style={[{ width: '100%', marginVertical: verticalScale(15) }]}>
@@ -735,7 +742,7 @@ const Catalog = () => {
                   justifyContent: 'flex-start',
                 }}>
                 {showcollection &&
-                  collectionCatalogList?.map(item => (
+                  FilterCollections?.map(item => (
                     <TouchableOpacity
                       key={item?.id}
                       style={[
