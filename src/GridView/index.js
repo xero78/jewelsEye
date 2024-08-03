@@ -35,7 +35,7 @@ const GridView = props => {
     onRefresh,
   } = props;
   const focus = useIsFocused();
-
+console.log(Allselecteditem,"ssssss")
   const [loading, setLoading] = useState(null);
   const [serverAddress, setServerAdress] = useState('');
   const handleShareSingledata = async item => {
@@ -54,13 +54,13 @@ const GridView = props => {
       if (downloadResult.statusCode === 200) {
         let message = `${item.skuName}`;
         if (item.tagPrice > 0) {
-          message += `,${item.tagPrice}`;
+          message += `${item.tagPrice}`;
         }
 
         const shareOptions = {
           title: 'Share Product',
           message: message,
-          url: 'file://' + filePath, // Share the downloaded image
+          url: 'file://' + filePath, 
           type: 'image/jpeg',
           failOnCancel: false,
         };

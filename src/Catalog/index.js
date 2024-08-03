@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Platform,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
@@ -31,6 +32,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Catalog = () => {
   const focus = useIsFocused();
+  const [scrollOffset, setScrollOffset] = useState(null);
+  const scrollViewRef = useRef(null);
   const [serachText, setSearchText] = useState('');
   const [products, setProducts] = useState([]);
   const [oldData,setOldData]= useState([])
@@ -59,10 +62,8 @@ const Catalog = () => {
   const [selectedFilterTypes, setSelectedFilterTypes] = useState([]);
   const [selectedFilterMetals, setSelectedFilterMetals] = useState([]);
   const[selectedFilterCollections,setSelectedFilterCollections]=useState([])
-  const [refreshing, setRefreshing] = useState(false);
+  
   const [serverAddress, setServerAdress] = useState('');
-  const [refresh, setRefreh] = useState(false);
-  const [AsyncData, setAsyncData] = useState([]);
   const [count, setCount] = useState(1);
   
   const [isPdfDisabled, setIsPdfDisabled] = useState(false);
@@ -74,6 +75,16 @@ const Catalog = () => {
 
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
+  };
+
+  const handleOnScroll = event => {
+    setScrollOffset(event.nativeEvent.contentOffset.y);
+  };
+
+  const handleScrollTo = p => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo(p);
+    }
   };
   const getSever = async () => {
     const getserverip = await AsyncStorage.getItem('serverIp');
@@ -91,7 +102,7 @@ const Catalog = () => {
     await axios
       .get(`https://${serverAddress && serverAddress}/Home/CatalogList`)
       .then(response => {
-        console.log(response.data?.cataloglist, "fetch products");
+        // console.log(response.data?.cataloglist, "fetch products");
         setLoading(false);
         setProducts(response.data?.cataloglist);
         setOldData(response.data?.cataloglist)
@@ -121,290 +132,174 @@ setProducts(oldData)
   setProducts(TempSearchList)
 }
 }
-  // const fetchFilteredCatalogProductsData = async () => {
-  //   setLoading(true);
-  //   axios
-  //     .get(`https://${serverAddress}/Home/CatalogList`)
-  //     .then(response => {
-  //       console.log(response.data?.cataloglist);
 
-  //       const filterdata = response.data?.cataloglist?.filter(i => {
-  //         const matchesItemNames =
-  //           selectedFilterTypes.length > 0
-  //             ? selectedFilterTypes.includes(i.itemName)
-  //             : true;
-  //         const matchesMetalCodes =
-  //           selectedFilterMetals.length > 0
-  //             ? selectedFilterMetals.includes(i.metalCode)
-  //             : true;
-  //         const uniqueCollections = getUniqueItemsByCollection(
-  //           response.data?.cataloglist,
-  //         );
-  //         setCollectionCatalogList(uniqueCollections);
 
-  //         return matchesItemNames && matchesMetalCodes && uniqueCollections;
-  //       });
-  //       setProducts(filterdata);
-  //       setLoading(false);
-  //     })
-  //     .catch(error => {
-  //       console.error('Error filterrr fetching data: ', error);
-  //     });
-  // };
 
-  // const getUniqueItemsByName = items => {
-  //   const itemNames = new Set();
-  //   return items.filter(item => {
-  //     if (!itemNames.has(item.itemName)) {
-  //       itemNames.add(item.itemName);
-  //       return true;
-  //     }
-  //     return false;
-  //   });
-  // };
+  const generatePDF = async () => {
+    setIsLoading(true);
 
-  // const getUniqueItemsByMetal = items => {
-  //   const itemNames = new Set();
-  //   return items.filter(item => {
-  //     if (!itemNames.has(item.metalCode)) {
-  //       itemNames.add(item.metalCode);
-  //       return true;
-  //     }
-  //     return false;
-  //   });
-  // };
+    if (wishlist?.length > 0) {
+      const downloadDirectoryPath = `${RNFS.DownloadDirectoryPath}`;
 
-  // const getUniqueItemsByCollection = items => {
-  //   const collectionNames = new Set();
-  //   return items.filter(item => {
-  //     if (collectionNames && !collectionNames.has(item.styleName)) {
-  //       collectionNames.add(item.styleName);
-  //       return true;
-  //     }
-  //     return false;
-  //   });
-  // };
+      const wishlistRows = wishlist
+        .map((item, index) => {
+          const priceDisplay =
+            parseFloat(item.tagPrice) > 0
+              ? `<strong> ${item.currencySymbol} ${item.tagPrice}</strong>`
+              : '';
+          return `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>
+                    <img src="${IMAGE_BASE_URL}/${
+            item.skuName
+          }.jpg" alt="Product Image" style="max-width:300px; max-height:300px;" />
+                  </td>
+                  <td>
+                    ${item.skuName} ${item.metalCode}<br>
+                     ${item.itemName}<br>
+                  <br>
+                   ${priceDisplay}<br>
 
-  // const handleFilterButtonClick = (itemName, isMetal, isCollection) => {
-  //   console.log(isMetal, 'metalllllllll');
+                  </td>
+                </tr>
+              `;
+        })
+        .join('');
 
-  //   if (isMetal) {
-  //     setSelectedFilterMetals(prev => {
-  //       if (prev.includes(itemName)) {
-  //         return prev.filter(name => name !== itemName);
-  //       } else {
-  //         return [...prev, itemName];
-  //       }
-  //     });
-  //   } else if (isCollection) {
-  //     setSelectedFilterCollections(prev => {
-  //       if (prev.includes(itemName)) {
-  //         return prev.filter(name => name !== itemName);
-  //       } else {
-  //         return [...prev, itemName];
-  //       }
-  //     });
-  //   } else {
-  //     setSelectedFilterTypes(prev => {
-  //       if (prev.includes(itemName)) {
-  //         return prev.filter(name => name !== itemName);
-  //       } else {
-  //         return [...prev, itemName];
-  //       }
-  //     });
-  //   }
-  // };
+      const totalPrice = wishlist.reduce(
+        (sum, item) => sum + parseFloat(item.tagPrice),
+        0,
+      );
 
-  // const generatePDF = async () => {
-  //   setIsLoading(true);
+      const html = `<!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+      th {
+        background-color: #146C93;
+        color: white;
+        text-align: left;
+          font-size: 35px;
+      }
+      td {
+        text-align: left;
+         font-size: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <table>
+      <thead>
+        <tr>
+          <th>S. No.</th>
+          <th>Product Images</th>
+          <th>Product Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${wishlistRows}
+      </tbody>
 
-  //   if (wishlist?.length > 0) {
-  //     const downloadDirectoryPath = `${RNFS.DownloadDirectoryPath}`;
+    </table>
+  </body>
+  </html>`;
 
-  //     const wishlistRows = wishlist
-  //       .map((item, index) => {
-  //         const priceDisplay =
-  //           parseFloat(item.tagPrice) > 0
-  //             ? `<strong> ${item.currencySymbol} ${item.tagPrice}</strong>`
-  //             : '';
-  //         return `
-  //               <tr>
-  //                 <td>${index + 1}</td>
-  //                 <td>
-  //                   <img src="${IMAGE_BASE_URL}/${
-  //           item.skuName
-  //         }.jpg" alt="Product Image" style="max-width:300px; max-height:300px;" />
-  //                 </td>
-  //                 <td>
-  //                   ${item.skuName} ${item.metalCode}<br>
-  //                    ${item.itemName}<br>
-  //                 <br>
-  //                  ${priceDisplay}<br>
+      try {
+        const options = {
+          html,
+          fileName: `JewelsEye${count}`,
+          directory: 'Downloads',
+        };
+        const file = await RNHTMLtoPDF.convert(options);
+        console.log('PDF File:', file.filePath);
 
-  //                 </td>
-  //               </tr>
-  //             `;
-  //       })
-  //       .join('');
-
-  //     const totalPrice = wishlist.reduce(
-  //       (sum, item) => sum + parseFloat(item.tagPrice),
-  //       0,
-  //     );
-
-  //     const html = `<!DOCTYPE html>
-  // <html>
-  // <head>
-  //   <meta charset="UTF-8">
-  //   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  //   <style>
-  //     table {
-  //       width: 100%;
-  //       border-collapse: collapse;
-  //     }
-  //     th, td {
-  //       border: 1px solid #ddd;
-  //       padding: 8px;
-  //     }
-  //     th {
-  //       background-color: #146C93;
-  //       color: white;
-  //       text-align: left;
-  //         font-size: 35px;
-  //     }
-  //     td {
-  //       text-align: left;
-  //        font-size: 30px;
-  //     }
-  //   </style>
-  // </head>
-  // <body>
-  //   <table>
-  //     <thead>
-  //       <tr>
-  //         <th>S. No.</th>
-  //         <th>Product Images</th>
-  //         <th>Product Details</th>
-  //       </tr>
-  //     </thead>
-  //     <tbody>
-  //       ${wishlistRows}
-  //     </tbody>
-
-  //   </table>
-  // </body>
-  // </html>`;
-
-  //     try {
-  //       const options = {
-  //         html,
-  //         fileName: `JewelsEye${count}`,
-  //         directory: 'Downloads',
-  //       };
-  //       const file = await RNHTMLtoPDF.convert(options);
-  //       console.log('PDF File:', file.filePath);
-
-  //       const shareOptions = {
-  //         title: 'Share PDF',
-  //         url: `file://${file.filePath}`,
-  //         failOnCancel: false,
-  //       };
-  //       await Share.open(shareOptions);
-  //       setCount(count + 1);
-  //       setIsLoading(false);
-  //       setCustomdropdown(false);
-  //       setIsImageDisabled(false);
-  //     } catch (error) {
-  //       Alert.alert('Error', error.message);
-  //       setIsLoading(false);
-  //       setCustomdropdown(false);
-  //       setIsImageDisabled(false);
-  //     }
-  //   } else {
-  //     Alert.alert('Please select an item');
-  //     setIsLoading(false);
-  //     setIsImageDisabled(false);
-  //   }
-  // };
-
-  // const handleShareClick = item => {
-  //   setSelectedForShare(prev => {
-  //     const updatedShareList = prev.includes(item)
-  //       ? prev.filter(i => i.skuName !== item.skuName)
-  //       : [...prev, item];
-  //     return updatedShareList;
-  //   });
-  // };
-
-  // const handleWishlistClick = item => {
-  //   setClickWishlist(prevState => {
-  //     const newState = {
-  //       ...prevState,
-  //       [item.skuName]: !prevState[item.skuName],
-  //     };
-  //     setWishlistCount(Object.values(newState).filter(Boolean).length);
-
-  //     setWishlistStates(prev => {
-  //       if (newState[item.skuName]) {
-  //         // Add item to wishlist
-  //         return [...prev, item];
-  //       } else {
-  //         // Remove item from wishlist
-  //         return prev.filter(
-  //           wishlistItem => wishlistItem.skuName !== item.skuName,
-  //         );
-  //       }
-  //     });
-
-  //     return newState;
-  //   });
-  // };
+        const shareOptions = {
+          title: 'Share PDF',
+          url: `file://${file.filePath}`,
+          failOnCancel: false,
+        };
+        await Share.open(shareOptions);
+        setCount(count + 1);
+        setIsLoading(false);
+        setCustomdropdown(false);
+        setIsImageDisabled(false);
+      } catch (error) {
+        Alert.alert('Error', error.message);
+        setIsLoading(false);
+        setCustomdropdown(false);
+        setIsImageDisabled(false);
+      }
+    } else {
+      Alert.alert('Please select an item');
+      setIsLoading(false);
+      setIsImageDisabled(false);
+    }
+  };
+  const onSharePress = async () => {
+    setIsSharing(true);
+    setIsPdfDisabled(true);
+    if (wishlist.length === 0) {
+      Alert.alert('No items to share');
+      return;
+    }
+    try {
+      const downloadPromises = wishlist.map(item => {
+        const imageUrl = `${IMAGE_BASE_URL}/${item.skuName}.jpg`
+        const imagePath = `${RNFS.CachesDirectoryPath}/${item.skuName}.jpg`
+        return RNFS.downloadFile({
+          fromUrl: imageUrl,
+          toFile: imagePath,
+        }).promise.then(() => {
+          return RNFS.readFile(imagePath, 'base64').then(base64Data => {
+             return `data:image/jpeg;base64,${base64Data}`
+          });
+        });
+      });
+      const downloadedItems = await Promise.all(downloadPromises);
+      // console.log(downloadedItems,"downloaditemsss")
+      // const base64Images = downloadedItems.map(item => item.base64Image);
+      const captions = wishlist?.map(item => item.skuName).join('\n\n');
+      const shareOptions = {
+        title: 'Share Wishlist Images',
+        urls: downloadedItems,
+        failOnCancel: false,
+        message:captions,
+        social: Share.Social.WHATSAPP,
+        
+      };
+      console.log(shareOptions.length,'--->')
+      await Share.shareSingle(shareOptions);
+      setCustomdropdown(false);
+      setIsSharing(false);
+      setIsPdfDisabled(false);
+    } catch (error) {
+      console.error('Error sharing images: ', error);
+      Alert.alert('Image Not Found')
+      setIsSharing(false);
+      setIsPdfDisabled(false);
+      setCustomdropdown(false)
+    }
+  };
 
 
 
   
+  
+  
+  
 
-  // console.log(Allselecteditem, 'allselectitemm');
-
-  // const onSharePress = async () => {
-  //   setIsSharing(true);
-  //   setIsPdfDisabled(true);
-  //   if (wishlist.length === 0) {
-  //     Alert.alert('No items to share');
-  //     return;
-  //   }
-
-  //   try {
-  //     const downloadPromises = wishlist.map(item => {
-  //       const imageUrl = `${IMAGE_BASE_URL}/${item.skuName}.jpg`;
-  //       const imagePath = `${RNFS.CachesDirectoryPath}/${item.skuName}.jpg`;
-  //       return RNFS.downloadFile({
-  //         fromUrl: imageUrl,
-  //         toFile: imagePath,
-  //       }).promise.then(() => {
-  //         return RNFS.readFile(imagePath, 'base64').then(base64Data => {
-  //           return `data:image/jpeg;base64,${base64Data}`;
-  //         });
-  //       });
-  //     });
-  //     const base64Images = await Promise.all(downloadPromises);
-  //     const shareOptions = {
-  //       title: 'Share Wishlist Images',
-  //       urls: base64Images,
-  //       failOnCancel: false,
-  //     };
-  //     await Share.open(shareOptions);
-  //     setCustomdropdown(false);
-  //     setIsSharing(false);
-  //     setIsPdfDisabled(false);
-  //   } catch (error) {
-  //     console.error('Error sharing images: ', error);
-  //     setIsSharing(false);
-  //     setIsPdfDisabled(false);
-  //   }
-  // };
-
-  console.log(products,"producttt")
+  // console.log(products,"producttt")
 
   const filterItemsName=()=>{
     const uniqueItems = products.filter((obj, index) => {
@@ -421,16 +316,57 @@ setProducts(oldData)
   
   }
 
-  
   const filterCollectionName=()=>{
     const uniqueItems = products.filter((obj, index) => {
       return index === products.findIndex(o => obj.styleName === o.styleName);
   });
-
   setFilterCollections(uniqueItems)
   }
 
 
+
+  const handleFilterButtonClick = (value, type) => {
+    let updatedFilters;
+    if (type === 'item') {
+      updatedFilters = selectedFilterTypes.includes(value)
+        ? selectedFilterTypes.filter(item => item !== value)
+        : [...selectedFilterTypes, value];
+      setSelectedFilterTypes(updatedFilters);
+    } else if (type === 'metal') {
+      updatedFilters = selectedFilterMetals.includes(value)
+        ? selectedFilterMetals.filter(metal => metal !== value)
+        : [...selectedFilterMetals, value];
+      setSelectedFilterMetals(updatedFilters);
+    } else if (type === 'collection') {
+      updatedFilters = selectedFilterCollections.includes(value)
+        ? selectedFilterCollections.filter(collection => collection !== value)
+        : [...selectedFilterCollections, value];
+      setSelectedFilterCollections(updatedFilters);
+    }
+  };
+
+
+  const applyFilters = () => {
+    let filteredProducts = [...products];
+    if (selectedFilterTypes.length > 0) {
+      filteredProducts = filteredProducts.filter(product =>
+        selectedFilterTypes.includes(product.itemName)
+      );
+    }
+    if (selectedFilterMetals.length > 0) {
+      filteredProducts = filteredProducts.filter(product =>
+        selectedFilterMetals.includes(product.metalCode)
+      );
+    }
+    if (selectedFilterCollections.length > 0) {
+      filteredProducts = filteredProducts.filter(product =>
+        selectedFilterCollections.includes(product.styleName)
+      );
+    }
+    setProducts(filteredProducts);
+  };
+  
+  
   return (
     <>
       {loading ? (
@@ -451,6 +387,7 @@ setProducts(oldData)
             // generatePDF={generatePDF}
             setAllSelecteditem={setAllSelecteditem}
             // fetchCatalogProductsData={fetchProductsData}
+            fetchProductsData={fetchProductsData}
             isLoading={isLoading}
             Allselecteditem={Allselecteditem}
             setSearchText={setSearchText}
@@ -470,7 +407,7 @@ setProducts(oldData)
                 disabled={isPdfDisabled}
                 onPress={() => {
                   setIsImageDisabled(true);
-                  // generatePDF();
+                  generatePDF();
                 }}
                 style={{
                   width: '40%',
@@ -505,7 +442,7 @@ setProducts(oldData)
                 disabled={isImageDisabled}
                 onPress={() => {
                   setIsPdfDisabled(true);
-                  // onSharePress();
+                  onSharePress();
                 }}
                 style={{
                   width: '40%',
@@ -588,6 +525,10 @@ setProducts(oldData)
             animationIn={'slideInRight'}
             animationOut={'slideOutRight'}
             isVisible={isModalVisible}
+            scrollTo={handleScrollTo}
+            scrollOffset={scrollOffset}
+            scrollOffsetMax={400 - 300} 
+            propagateSwipe={true}
             backdropOpacity={0}
             style={{
               margin: 0,
@@ -596,6 +537,7 @@ setProducts(oldData)
                   ? verticalScale(55)
                   : verticalScale(105),
             }}>
+           
             <View
               style={{
                 flex: 1,
@@ -604,9 +546,15 @@ setProducts(oldData)
                 position: 'absolute',
                 right: 0,
                 height: '100%',
-                padding: 20,
+                paddingHorizontal: 20,
               }}>
-              <View
+                <ScrollView
+                      ref={scrollViewRef}
+                      onScroll={handleOnScroll}
+                      scrollEventThrottle={16}
+                // contentContainerStyle={{backgroundColor:'red',flex:1}}
+                >
+                <View
                 style={{
                   flexDirection: 'row',
                   justifyContent: 'space-between',
@@ -650,24 +598,14 @@ setProducts(oldData)
                     ? filterItemsList?.map(item => {
                       return (
                         <TouchableOpacity
-                          key={item?.id}
-                          style={[
-                            styles.filterButton,
-                            selectedFilterTypes.includes(item.itemName) &&
-                            styles.filterButtonSelected,
-                          ]}
-                          onPress={() =>
-                            handleFilterButtonClick(item?.itemName, false)
-                          }>
-                          <Text
-                            style={{
-                              color: selectedFilterTypes.includes(
-                                item.itemName,
-                              )
-                                ? '#146C93'
-                                : '#000',
-                              fontSize: moderateScale(12),
-                            }}>
+                        key={item.id}
+                        style={[
+                          styles.filterButton,
+                          selectedFilterTypes.includes(item.itemName) && styles.filterButtonSelected,
+                        ]}
+                        onPress={() => handleFilterButtonClick(item.itemName, 'item')}
+                      >
+                     <Text style={{ color: selectedFilterTypes.includes(item.itemName) ? '#146C93' : '#000', fontSize: moderateScale(12) }}>
                             {item?.itemName}
                           </Text>
                         </TouchableOpacity>
@@ -698,24 +636,14 @@ setProducts(oldData)
                     ? metalcatalogList?.map(item => {
                       return (
                         <TouchableOpacity
-                          key={item?.id}
-                          style={[
-                            styles.filterButton,
-                            selectedFilterMetals.includes(item.metalCode) &&
-                            styles.filterButtonSelected,
-                          ]}
-                          onPress={() =>
-                            handleFilterButtonClick(item?.metalCode, true)
-                          }>
-                          <Text
-                            style={{
-                              color: selectedFilterMetals.includes(
-                                item.metalCode,
-                              )
-                                ? '#146C93'
-                                : '#000',
-                              fontSize: moderateScale(12),
-                            }}>
+                        key={item.id}
+                        style={[
+                          styles.filterButton,
+                          selectedFilterMetals.includes(item.metalCode) && styles.filterButtonSelected,
+                        ]}
+                        onPress={() => handleFilterButtonClick(item.metalCode, 'metal')}
+                      >
+                <Text style={{ color: selectedFilterMetals.includes(item.metalCode) ? '#146C93' : '#000', fontSize: moderateScale(12) }}>
                             {item?.metalCode}
                           </Text>
                         </TouchableOpacity>
@@ -744,29 +672,22 @@ setProducts(oldData)
                 {showcollection &&
                   FilterCollections?.map(item => (
                     <TouchableOpacity
-                      key={item?.id}
-                      style={[
-                        styles.filterButton,
-                        selectedFilterCollections.includes(item.styleName) &&
-                        styles.filterButtonSelected,
-                      ]}
-                      onPress={() =>
-                        handleFilterButtonClick(item?.styleName, false, true)
-                      }>
-                      <Text
-                        style={{
-                          color: selectedFilterCollections.includes(
-                            item.styleName,
-                          )
-                            ? '#146C93'
-                            : '#000',
-                          fontSize: moderateScale(12),
-                        }}>
+                    key={item.id}
+                    style={[
+                      styles.filterButton,
+                      selectedFilterCollections.includes(item.styleName) && styles.filterButtonSelected,
+                    ]}
+                    onPress={() => handleFilterButtonClick(item.styleName, 'collection')}
+                  >
+              <Text style={{ color: selectedFilterCollections.includes(item.styleName) ? '#146C93' : '#000', fontSize: moderateScale(12) }}>
                         {item?.styleName}
                       </Text>
                     </TouchableOpacity>
                   ))}
               </View>
+
+              </ScrollView>
+         
               <View
                 style={{
                   flexDirection: 'row',
@@ -780,7 +701,7 @@ setProducts(oldData)
                 <TouchableOpacity
                   onPress={() => {
                     setModalVisible(false);
-                    // fetchFilteredCatalogProductsData();
+                    applyFilters();
                   }}
                   style={[styles.bottomSheetButton, { width: '42%' }]}>
                   <Text style={[styles.bottomSheetButtonText]}>
@@ -789,10 +710,12 @@ setProducts(oldData)
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
-                    setSelectedFilterMetals('');
-                    setSelectedFilterTypes('');
+                    setSelectedFilterMetals([]);
+                    setSelectedFilterTypes([]);
+                    setSelectedFilterCollections([]);
+                    setProducts(oldData);
                     setModalVisible(false);
-                    // fetchProductsData();
+               
                   }}
                   style={[styles.bottomSheetButton, { width: '42%' }]}>
                   <Text style={[styles.bottomSheetButtonText]}>
@@ -800,6 +723,7 @@ setProducts(oldData)
                   </Text>
                 </TouchableOpacity>
               </View>
+       
             </View>
           </Modal>
 

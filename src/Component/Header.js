@@ -21,7 +21,7 @@ const Header = props => {
   const {
     generatePDF,
     setAllSelecteditem,
-    fetchCatalogProductsData,
+    fetchProductsData,
     isLoading,
     Allselecteditem,
     setSearchText,
@@ -42,7 +42,7 @@ const Header = props => {
       }}>
       <Pressable
         onPress={() => {
-          fetchCatalogProductsData(),
+          fetchProductsData(),
             setAllSelecteditem(false),
             setSearchText('');
         }}

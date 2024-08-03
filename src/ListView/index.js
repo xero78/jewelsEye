@@ -198,7 +198,7 @@ const ListView = props => {
       if (downloadResult.statusCode === 200) {
         let message = `${item.skuName}`;
         if (item.tagPrice > 0) {
-          message += `, Rs: ${item.tagPrice}`;
+          message += `${item.tagPrice}`;
         }
 
         const shareOptions = {
