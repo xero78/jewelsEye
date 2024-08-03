@@ -1,0 +1,245 @@
+
+// share multiple image and his data 
+const onSharePress = async () => {
+    if (selectedForShare.length === 0) {
+      Alert.alert('No Items Selected', 'Please select items to share.');
+      return;
+    }
+
+    try {
+      const shareOptions = {
+        title: 'Share Catalog',
+        urls: [],
+        message: '',
+      };
+
+      // Download images and generate message
+      const downloadPromises = selectedForShare.map(async item => {
+        const url = `${IMAGE_BASE_URL}/${item.skuName}.jpeg`;
+        const localFile = `${RNFS.CachesDirectoryPath}/${item.skuName}.jpeg`;
+
+        const download = await RNFS.downloadFile({
+          fromUrl: url,
+          toFile: localFile,
+        }).promise;
+
+        if (download.statusCode === 200) {
+          const base64Image = await RNFS.readFile(localFile, 'base64');
+          shareOptions.urls.push(`data:image/jpeg;base64,${base64Image}`);
+          shareOptions.message += `SKU: ${item.skuName}\nItem Name: ${item.itemName}\nPrice: Rs ${item.tagPrice}\n\n`;
+        } else {
+          throw new Error('Image download failed');
+        }
+      });
+
+      await Promise.all(downloadPromises);
+
+      if (shareOptions.urls.length > 0) {
+        await Share.open(shareOptions);
+      } else {
+        Alert.alert('Error', 'No images to share. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error sharing items:', error);
+      Alert.alert('Error', 'Failed to share items. Please try again.');
+    }
+  };
+
+  // pdf 
+    // const generatePDF = async () => {
+  //   setIsLoading(true);
+  //   const wishlistRows = wishlistStates
+  //     .map(
+  //       (item, index) => `
+  //       <tr>
+  //         <td>${index + 1}</td>
+  //         <td>
+  //           <img src="${IMAGE_BASE_URL}/${
+  //         item.skuName
+  //       }.jpeg" alt="Product Image" width="300" height="300" />
+  //         </td>
+  //         <td>
+  //           SKU: ${item.skuName}<br>
+  //           Item Name: ${item.itemName}<br>
+  //           Gross Wt: ${item.grossWt} GMS (G)<br>
+  //           Metal Code: ${item.metalCode}<br>
+  //           Tag Price: Rs ${item.tagPrice}
+  //         </td>
+  //       </tr>
+  //     `,
+  //     )
+  //     .join('');
+  //   const totalPrice = wishlistStates.reduce(
+  //     (sum, item) => sum + parseFloat(item.tagPrice),
+  //     0,
+  //   );
+  //   const html = `
+  //     <html lang="en">
+  //     <head>
+  //         <meta charset="UTF-8">
+  //         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  //         <style>
+  //             body {
+  //                 font-family: Arial, sans-serif;
+  //                 margin: 0;
+  //                 padding: 0;
+  //                 background-color: #f9f9f9;
+  //             }
+  //             .container {
+  //                 width: 80%;
+  //                 margin: 20px auto;
+  //                 background-color: #fff;
+  //                 padding: 20px;
+  //                 box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  //             }
+  //             .header, .footer {
+  //                 text-align: center;
+  //                 margin-bottom: 20px;
+  //             }
+  //             .header h1 {
+  //                 margin: 0;
+  //                 font-size: 24px;
+  //             }
+  //             .logo-date-container {
+  //                 display: flex;
+  //                 justify-content: space-between;
+  //                 align-items: center;
+  //                 margin-bottom: 20px;
+  //             }
+  //             .address-container {
+  //                 display: flex;
+  //                 justify-content: space-between;
+  //                 margin-bottom: 20px;
+  //             }
+  //             .address, .bank-details {
+  //                 width: 45%;
+  //             }
+  //             .details table {
+  //                 width: 100%;
+  //                 border-collapse: collapse;
+  //             }
+  //             .details th, .details td {
+  //                 border: 1px solid #ddd;
+  //                 padding: 8px;
+  //                 text-align: left;
+  //             }
+  //             .details th {
+  //                 background-color: #146C93;
+  //                 color: #fff;
+  //             }
+  //             .total {
+  //                 text-align: right;
+  //                 margin-top: 20px;
+  //                 font-weight: bold;
+  //                 color: #fff;
+  //                 background-color: #146C93;
+  //                 padding: 10px;
+  //             }
+  //         </style>
+  //     </head>
+  //     <body>
+  //         <div class="container">
+
+  //             <div class="logo-date-container">
+  //                 <img src="https://demo.jewelscore.com/images/jcorelogo.png" alt="Logo" width="200" height="150">
+  //                 <p>${new Date().toLocaleDateString()}</p>
+  //             </div>
+
+  //             <div class="address-container">
+  //                 <div class="address">
+  //                     <strong>JEWELS INFOSYSTEMS</strong><br>
+  //                     203-204, 2ND FLOOR G-23<br>
+  //                     SHREE MANSON, KAMLA MARG C-SCHEME
+  //                 </div>
+  //                 <div class="bank-details">
+  //                     <strong>Bank Details:</strong><br>
+  //                     A/C No: 10000000000001<br>
+  //                     Bank Name: INDIAN BANK<br>
+  //                     Bank Address: JAIPUR, RAJASTHAN<br>
+  //                     SwiftCode: IBK001
+  //                 </div>
+  //             </div>
+  //             <div class="details">
+  //                 <table>
+  //                     <thead>
+  //                         <tr>
+  //                             <th>S. No.</th>
+  //                             <th>Product Image</th>
+  //                             <th>Product Details</th>
+  //                         </tr>
+  //                     </thead>
+  //                     <tbody>
+  //                         ${wishlistRows}
+  //                     </tbody>
+  //                 </table>
+  //             </div>
+  //             <div class="total">
+  //                 Total Price: Rs ${totalPrice.toFixed(2)}
+  //             </div>
+  //         </div>
+  //     </body>
+  //     </html>
+  //   `;
+
+  //   try {
+  //     const options = {
+  //       html,
+  //       fileName: `wishlist_${count}`,
+  //       directory: 'Documents',
+  //     };
+  //     const file = await RNHTMLtoPDF.convert(options);
+  //     console.log(file, 'filess');
+  //     Alert.alert('Success', `PDF saved to ${file.filePath}`);
+  //     setCount(count + 1);
+  //     setIsLoading(false);
+  //   } catch (error) {
+  //     Alert.alert('Error', error.message);
+  //     setIsLoading(false);
+  //   }
+  // };
+
+
+  // share multiple image and his data but multiple time   // const onSharePress = async () => {
+  //   if (wishlistStates.length === 0) {
+  //     Alert.alert('No Items Selected', 'Please select items to share.');
+  //     return;
+  //   }
+  //   try {
+  //     const sharePromises = wishlistStates.map(async item => {
+  //       const url = `${IMAGE_BASE_URL}/${item.skuName}.jpeg`;
+  //       const localFile = `${RNFS.CachesDirectoryPath}/${item.skuName}.jpeg`;
+  //       try {
+  //         await RNFS.downloadFile({
+  //           fromUrl: url,
+  //           toFile: localFile,
+  //         }).promise;
+  //         const base64Image = await RNFS.readFile(localFile, 'base64');
+  //         const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+  //         const message = `${item.skuName} ${item.itemName} Rs ${item.tagPrice}`;
+  //         return {url: imageUrl, message};
+  //       } catch (error) {
+  //         console.error(`Failed to process item ${item.skuName}:`, error);
+  //         return null;
+  //       }
+  //     });
+  //     const results = await Promise.all(sharePromises);
+  //     const validResults = results.filter(result => result !== null);
+  //     if (validResults.length > 0) {
+  //       for (const result of validResults) {
+  //         const shareOptions = {
+  //           title: 'Share Catalog',
+  //           message: result.message,
+  //           url: result.url,
+  //           failOnCancel: false,
+  //         };
+  //         await Share.open(shareOptions);
+  //       }
+  //     } else {
+  //       Alert.alert('Error', 'No images to share. Please try again.');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error sharing items:', error);
+  //     Alert.alert('Error', 'Failed to share items. Please try again.');
+  //   }
+  // };
